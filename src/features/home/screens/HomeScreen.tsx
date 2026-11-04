@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../cart/state/cartSlice';
 import { medicines, Medicine, searchMedicines } from '../../catalog/domain/medicines';
@@ -16,28 +17,39 @@ export function HomeScreen() {
   const { lines } = useSelector((state: RootState) => state.cart);
   const permissions = useAppPermissions();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Medicine[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [settledQuery, setSettledQuery] = useState('');
+  const normalizedQuery = query.trim();
+
+  useFocusEffect(
+    React.useCallback(() => () => {
+      setQuery('');
+      setSettledQuery('');
+    }, []),
+  );
 
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      setSearching(false);
+    if (!normalizedQuery) {
+      setSettledQuery('');
       return;
     }
-    setSearching(true);
     const timer = setTimeout(() => {
-      setResults(searchMedicines(query));
-      setSearching(false);
+      setSettledQuery(normalizedQuery);
+      searchMedicines(normalizedQuery).forEach(medicine => {
+        dispatch(addRecentSearch(medicine.name));
+      });
     }, 120);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [dispatch, normalizedQuery]);
 
   const submitSearch = (value = query) => {
-    if (value.trim()) dispatch(addRecentSearch(value));
+    searchMedicines(value).forEach(medicine => {
+      dispatch(addRecentSearch(medicine.name));
+    });
   };
+  const searching = normalizedQuery !== settledQuery;
+  const results: Medicine[] = searching || !normalizedQuery ? [] : searchMedicines(settledQuery);
   const quantityFor = (medicineId: string) => lines.find(line => line.medicineId === medicineId)?.quantity ?? 0;
-  const visibleMedicines = query.trim() ? (searching ? [] : results) : medicines;
+  const visibleMedicines = normalizedQuery ? (searching ? [] : results) : medicines;
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -55,12 +67,15 @@ export function HomeScreen() {
       </View>
       <PermissionStatusCard
         statuses={permissions.statuses}
-        coordinates={permissions.coordinates}
+        locationName={permissions.locationName}
         locationError={permissions.locationError}
+        addressError={permissions.addressError}
         requesting={permissions.requesting}
         error={permissions.error}
         onRequest={permissions.requestPermissions}
         onOpenSettings={permissions.openAppSettings}
+        onOpenDeviceLocationSettings={permissions.openDeviceLocationSettings}
+        onRetryLocation={permissions.retryLocation}
       />
       <Text style={styles.sectionTitle}>Find your medicine</Text>
       <View style={styles.searchBox}>
@@ -72,15 +87,15 @@ export function HomeScreen() {
           onSubmitEditing={() => submitSearch()}
           returnKeyType="search"
           placeholder="Search medicine name or salt..."
-          placeholderTextColor="#9aa5a1"
+          placeholderTextColor={colors.placeholder}
           style={styles.searchInput}
         />
         <Pressable accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={12} onPress={() => setQuery('')}>
           <Text style={styles.clearText}>×</Text>
         </Pressable>
       </View>
-      {!query.trim() && <Text style={styles.emptySearchHint}>Search by medicine name or salt to find a match.</Text>}
-      {!query.trim() && recent.length > 0 && (
+      {!normalizedQuery && <Text style={styles.emptySearchHint}>Search by medicine name or salt to find a match.</Text>}
+      {!normalizedQuery && recent.length > 0 && (
         <View style={styles.recentRow}>
           <Text style={styles.recentLabel}>RECENT</Text>
           {recent.map(item => (
@@ -91,10 +106,10 @@ export function HomeScreen() {
         </View>
       )}
       <View style={styles.sectionRow}>
-        <Text style={styles.sectionTitle}>{query.trim() ? 'Search results' : 'The local catalog'}</Text>
-        <Text style={styles.itemCount}>{query.trim() ? searching ? 'Searching…' : `${results.length} found` : `${medicines.length} medicines`}</Text>
+        <Text style={styles.sectionTitle}>{normalizedQuery ? 'Search results' : 'The local catalog'}</Text>
+        <Text style={styles.itemCount}>{normalizedQuery ? searching ? 'Searching…' : `${results.length} found` : `${medicines.length} medicines`}</Text>
       </View>
-      {query.trim() && searching && <Text accessibilityRole="progressbar" style={styles.emptyText}>Searching medicines…</Text>}
+      {normalizedQuery && searching && <Text accessibilityRole="progressbar" style={styles.emptyText}>Searching medicines…</Text>}
       {visibleMedicines.map(medicine => (
         <MedicineCard
           key={medicine.id}
@@ -103,7 +118,7 @@ export function HomeScreen() {
           onAdd={() => dispatch(addToCart(medicine.id))}
         />
       ))}
-      {query.trim() && !searching && results.length === 0 && (
+      {normalizedQuery && !searching && results.length === 0 && (
         <Text style={styles.emptyText}>No matches yet. Try another medicine or salt.</Text>
       )}
     </ScrollView>
@@ -117,13 +132,13 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: colors.green },
   brand: { fontSize: 29, fontWeight: '800', letterSpacing: -1.2, color: colors.ink, marginTop: 2 },
   brandDot: { color: colors.accent },
-  deliveryPill: { backgroundColor: '#e7f1eb', borderRadius: 20, paddingHorizontal: 11, paddingVertical: 9 },
+  deliveryPill: { backgroundColor: colors.tintGreen, borderRadius: 20, paddingHorizontal: 11, paddingVertical: 9 },
   deliveryText: { color: colors.green, fontWeight: '700', fontSize: 11 },
-  hero: { backgroundColor: '#174e43', borderRadius: 22, padding: 21, marginBottom: 22, overflow: 'hidden' },
-  heroTitle: { color: '#fff', fontSize: 24, fontWeight: '800', letterSpacing: -0.6 },
-  heroSub: { color: '#c3dbd2', fontSize: 13, marginTop: 6 },
-  heroBadge: { alignSelf: 'flex-start', backgroundColor: '#ffffff1f', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, marginTop: 16 },
-  heroBadgeText: { color: '#f6d99e', fontSize: 11, fontWeight: '700' },
+  hero: { backgroundColor: colors.hero, borderRadius: 22, padding: 21, marginBottom: 22, overflow: 'hidden' },
+  heroTitle: { color: colors.white, fontSize: 24, fontWeight: '800', letterSpacing: -0.6 },
+  heroSub: { color: colors.heroSubtle, fontSize: 13, marginTop: 6 },
+  heroBadge: { alignSelf: 'flex-start', backgroundColor: colors.heroBadge, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, marginTop: 16 },
+  heroBadgeText: { color: colors.heroAccent, fontSize: 11, fontWeight: '700' },
   sectionTitle: { color: colors.ink, fontWeight: '800', fontSize: 17, letterSpacing: -0.3, marginBottom: 12 },
   searchBox: { minHeight: 52, borderColor: colors.border, borderWidth: 1, borderRadius: 15, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13 },
   searchIcon: { color: colors.green, fontSize: 24, marginRight: 8 },
@@ -131,9 +146,9 @@ const styles = StyleSheet.create({
   clearText: { color: colors.muted, fontSize: 22, paddingLeft: 8 },
   emptySearchHint: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 10 },
   recentRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 14, marginBottom: 5, flexWrap: 'wrap' },
-  recentLabel: { color: colors.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
-  chip: { backgroundColor: '#eef2ed', borderRadius: 12, paddingHorizontal: 9, paddingVertical: 10, minHeight: 40 },
-  chipText: { color: '#52645e', fontSize: 10 },
+  recentLabel: { color: colors.ink, fontSize: 9, fontWeight: '800', letterSpacing: 1 },
+  chip: { backgroundColor: colors.chip, borderRadius: 12, paddingHorizontal: 9, paddingVertical: 10, minHeight: 40 },
+  chipText: { color: colors.ink, fontSize: 11, fontWeight: '700' },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 },
   itemCount: { color: colors.muted, fontSize: 11, marginBottom: 12 },
   emptyText: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: 'center', marginVertical: 22 },

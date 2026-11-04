@@ -6,25 +6,36 @@ import { colors } from '../../../theme/colors';
 
 type PermissionStatusCardProps = {
   statuses: AppPermissionStatuses;
-  coordinates: { latitude: number; longitude: number } | null;
+  locationName: { city: string | null; district: string | null } | null;
   locationError: string | null;
+  addressError: string | null;
   requesting: boolean;
   error: string | null;
   onRequest: () => void;
   onOpenSettings: () => void;
+  onOpenDeviceLocationSettings: () => void;
+  onRetryLocation: () => void;
 };
 
 export function PermissionStatusCard({
   statuses,
-  coordinates,
+  locationName,
   locationError,
+  addressError,
   requesting,
   error,
   onRequest,
   onOpenSettings,
+  onOpenDeviceLocationSettings,
+  onRetryLocation,
 }: PermissionStatusCardProps) {
   const isBlocked = statuses.location === 'blocked' || statuses.notifications === 'blocked';
   const isDenied = statuses.location === 'denied' || statuses.notifications === 'denied';
+  const blockedPermissions = [
+    statuses.location === 'blocked' ? 'location' : null,
+    statuses.notifications === 'blocked' ? 'notifications' : null,
+  ].filter((permission): permission is string => permission !== null);
+  const blockedLabel = blockedPermissions.join(' and ');
 
   return (
     <View style={styles.card}>
@@ -32,20 +43,41 @@ export function PermissionStatusCard({
       <Text style={styles.status}>
         Location: {permissionStatusLabel(statuses.location)} · Notifications: {permissionStatusLabel(statuses.notifications)}
       </Text>
-      {coordinates && (
+      {locationName && (
         <Text style={styles.coordinate}>
-          Delivering to: {coordinates.latitude.toFixed(4)},{coordinates.longitude.toFixed(4)}
+          Delivering to: {[
+            locationName.city ? `City: ${locationName.city}` : null,
+            locationName.district ? `District: ${locationName.district}` : null,
+          ].filter(Boolean).join(' · ')}
         </Text>
       )}
-      {statuses.location === 'granted' && !coordinates && (
+      {statuses.location === 'granted' && !locationName && !locationError && !addressError && (
         <Text style={styles.rationale}>
-          {locationError ? 'Location unavailable. Check device location settings.' : 'Finding your location…'}
+          Finding your city and district…
         </Text>
+      )}
+      {statuses.location === 'granted' && locationError && (
+        <>
+          <Text style={styles.rationale}>Turn on device location to show your city and district.</Text>
+          <Pressable accessibilityRole="button" onPress={onOpenDeviceLocationSettings} style={styles.action}>
+            <Text style={styles.actionText}>TURN ON DEVICE LOCATION</Text>
+          </Pressable>
+        </>
+      )}
+      {statuses.location === 'granted' && addressError && (
+        <>
+          <Text style={styles.rationale}>{addressError}</Text>
+          <Pressable accessibilityRole="button" onPress={onRetryLocation} style={styles.action}>
+            <Text style={styles.actionText}>RETRY LOCATION</Text>
+          </Pressable>
+        </>
       )}
       {isBlocked && (
         <>
           <Text style={styles.rationale}>
-            These permissions are blocked. Allow them in App Settings to enable location-based delivery and notifications.
+            {blockedPermissions.length === 1
+              ? `${blockedLabel.charAt(0).toUpperCase() + blockedLabel.slice(1)} permission is blocked. Allow it in App Settings.`
+              : `${blockedLabel.charAt(0).toUpperCase() + blockedLabel.slice(1)} permissions are blocked. Allow them in App Settings.`}
           </Text>
           <Pressable accessibilityRole="button" onPress={onOpenSettings} style={styles.action}>
             <Text style={styles.actionText}>OPEN APP SETTINGS</Text>
@@ -70,5 +102,5 @@ const styles = StyleSheet.create({
   rationale: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 7 },
   action: { alignSelf: 'flex-start', marginTop: 8, paddingVertical: 10, paddingHorizontal: 6, minHeight: 44, justifyContent: 'center' },
   actionText: { color: colors.green, fontSize: 10, fontWeight: '800', letterSpacing: 0.4 },
-  error: { color: '#a43e32', fontSize: 11, lineHeight: 15, marginTop: 6 },
+  error: { color: colors.error, fontSize: 11, lineHeight: 15, marginTop: 6 },
 });

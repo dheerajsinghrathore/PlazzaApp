@@ -28,4 +28,20 @@ describe('bill and coupon rules', () => {
     expect(calculateBill(200, 'FIRST100').discount).toBe(100);
     expect(validateCoupon('FIRST100', 300, ['FIRST100'])).toEqual({ valid: false, reason: 'FIRST100 has already been used on this account.' });
   });
+
+  it('normalizes coupon codes and rejects unknown codes and empty carts', () => {
+    expect(validateCoupon(' save10 ', 200)).toEqual({ valid: true });
+    expect(validateCoupon('NOTREAL', 200).valid).toBe(false);
+    expect(validateCoupon('SAVE10', 0).valid).toBe(false);
+  });
+
+  it('never applies a stale or invalid coupon while calculating a bill', () => {
+    expect(calculateBill(100, 'FIRST100')).toEqual({
+      subtotal: 100,
+      discount: 0,
+      delivery: 40,
+      total: 140,
+    });
+    expect(calculateBill(200, 'FIRST100', ['FIRST100']).discount).toBe(0);
+  });
 });

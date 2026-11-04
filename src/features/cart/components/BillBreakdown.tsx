@@ -26,12 +26,12 @@ function BillRow({ label, value, positive = false, strong = false }: { label: st
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderRadius: 17, borderWidth: 1, borderColor: '#edf0ea', padding: 16 },
+  card: { backgroundColor: colors.surface, borderRadius: 17, borderWidth: 1, borderColor: colors.borderSubtle, padding: 16 },
   heading: { color: colors.ink, fontWeight: '800', fontSize: 14, marginBottom: 10 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 7 },
   label: { color: colors.muted, fontSize: 12 },
   value: { color: colors.ink, fontSize: 12, fontWeight: '600' },
   positive: { color: colors.green },
   strong: { color: colors.ink, fontWeight: '800', fontSize: 14 },
-  divider: { height: 1, backgroundColor: '#edf0ea', marginVertical: 4 },
+  divider: { height: 1, backgroundColor: colors.borderSubtle, marginVertical: 4 },
 });

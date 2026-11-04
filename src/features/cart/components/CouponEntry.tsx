@@ -20,7 +20,7 @@ export function CouponEntry({ value, onChange, onApply, appliedCode, onRemove }:
           onChangeText={onChange}
           autoCapitalize="characters"
           placeholder="Enter a coupon code"
-          placeholderTextColor="#9aa5a1"
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
         />
         <Pressable accessibilityRole="button" accessibilityLabel="Apply coupon" onPress={onApply} style={styles.button}>
@@ -41,9 +41,9 @@ export function CouponEntry({ value, onChange, onApply, appliedCode, onRemove }:
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', borderColor: '#dfe7dd', borderWidth: 1, borderRadius: 13, backgroundColor: colors.surface, paddingLeft: 12, paddingRight: 5, marginBottom: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', borderColor: colors.border, borderWidth: 1, borderRadius: 13, backgroundColor: colors.surface, paddingLeft: 12, paddingRight: 5, marginBottom: 8 },
   input: { flex: 1, color: colors.ink, fontSize: 12, paddingVertical: 12, minHeight: 48 },
-  button: { borderRadius: 9, backgroundColor: '#e8f2eb', paddingHorizontal: 13, minHeight: 44, justifyContent: 'center' },
+  button: { borderRadius: 9, backgroundColor: colors.tintGreen, paddingHorizontal: 13, minHeight: 44, justifyContent: 'center' },
   buttonText: { color: colors.green, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   applied: { paddingVertical: 10, minHeight: 44, justifyContent: 'center' },
   appliedText: { color: colors.green, fontSize: 11, fontWeight: '700' },

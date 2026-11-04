@@ -8,6 +8,11 @@ describe('cart mechanics', () => {
     expect(state.lines).toEqual([{ medicineId: 'm3', quantity: 2 }]);
   });
 
+  it('ignores unknown catalog IDs', () => {
+    const state = reducer(undefined, addToCart('not-a-medicine'));
+    expect(state.lines).toEqual([]);
+  });
+
   it('auto-removes a coupon with a toast notice when a cart change breaks eligibility', () => {
     let state = reducer(undefined, addToCart('m3'));
     state = reducer(state, addToCart('m4'));

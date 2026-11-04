@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Linking, Platform } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
+import Geocoder from 'react-native-geocoder-reborn';
 import { openSettings, RESULTS } from 'react-native-permissions';
 import {
   AppPermissionStatuses,
@@ -15,12 +16,15 @@ const BLOCKED_KEY = '@plazza/permissions-blocked-v1';
 
 type PermissionContextValue = {
   statuses: AppPermissionStatuses;
-  coordinates: { latitude: number; longitude: number } | null;
+  locationName: { city: string | null; district: string | null } | null;
   locationError: string | null;
+  addressError: string | null;
   requesting: boolean;
   error: string | null;
   requestPermissions: () => Promise<void>;
   openAppSettings: () => Promise<void>;
+  openDeviceLocationSettings: () => Promise<void>;
+  retryLocation: () => void;
 };
 
 const PermissionContext = createContext<PermissionContextValue | null>(null);
@@ -52,8 +56,9 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
   });
   const [requesting, setRequesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationName, setLocationName] = useState<{ city: string | null; district: string | null } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [addressError, setAddressError] = useState<string | null>(null);
   const mounted = useRef(true);
   const operationInProgress = useRef(false);
 
@@ -67,23 +72,49 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
 
   const refreshCoordinates = useCallback((allowed: boolean) => {
     if (!allowed) {
-      setCoordinates(null);
+      setLocationName(null);
       setLocationError(null);
+      setAddressError(null);
       return;
     }
+    setLocationError(null);
+    setAddressError(null);
     Geolocation.getCurrentPosition(
       position => {
-        if (mounted.current) {
-          setCoordinates({ latitude: position.coords.latitude, longitude: position.coords.longitude });
-          setLocationError(null);
-        }
+        Geocoder.geocodePosition({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        }).then(results => {
+          if (!mounted.current) return;
+          const result = results[0];
+          const city = result?.locality ?? result?.subLocality ?? null;
+          const district = result?.subAdminArea ?? null;
+          if (!city && !district) {
+            setAddressError('Could not determine your city and district. Please try again.');
+            return;
+          }
+          setLocationName({ city, district });
+        }).catch(geocoderError => {
+          if (mounted.current) {
+            setAddressError(geocoderError instanceof Error ? geocoderError.message : String(geocoderError));
+          }
+        });
       },
       positionError => {
-        if (mounted.current) setLocationError(positionError.message);
+        if (mounted.current) {
+          setLocationName(null);
+          setLocationError(positionError.code === 2
+            ? 'Device location is turned off or unavailable.'
+            : positionError.message);
+        }
       },
       { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
     );
   }, []);
+
+  const retryLocation = useCallback(() => {
+    refreshCoordinates(statuses.location === RESULTS.GRANTED);
+  }, [refreshCoordinates, statuses.location]);
 
   const refreshStatuses = useCallback(async () => {
     const [current, storedBlocked] = await Promise.all([
@@ -139,6 +170,20 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
     }
   }, []);
 
+  const openDeviceLocationSettings = useCallback(async () => {
+    try {
+      if (Platform.OS === 'android') {
+        await Linking.sendIntent('android.settings.LOCATION_SOURCE_SETTINGS');
+      } else {
+        await Linking.openSettings();
+      }
+    } catch (settingsError) {
+      if (mounted.current) {
+        setLocationError(settingsError instanceof Error ? settingsError.message : String(settingsError));
+      }
+    }
+  }, []);
+
   useEffect(() => {
     mounted.current = true;
     const initialize = async () => {
@@ -171,13 +216,19 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
 
   const value = useMemo(() => ({
     statuses,
-    coordinates,
+    locationName,
     locationError,
+    addressError,
     requesting,
     error,
     requestPermissions,
     openAppSettings,
-  }), [statuses, coordinates, locationError, requesting, error, requestPermissions, openAppSettings]);
+    openDeviceLocationSettings,
+    retryLocation,
+  }), [
+    statuses, locationName, locationError, addressError, requesting, error,
+    requestPermissions, openAppSettings, openDeviceLocationSettings, retryLocation,
+  ]);
 
   return <PermissionContext.Provider value={value}>{children}</PermissionContext.Provider>;
 }

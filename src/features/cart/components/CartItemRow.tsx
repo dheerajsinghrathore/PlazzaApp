@@ -26,8 +26,15 @@ export function CartItemRow({ medicine, quantity, onIncrease, onDecrease }: Cart
           <Text style={styles.stepperText}>−</Text>
         </Pressable>
         <Text style={styles.quantity}>{quantity}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Increase ${medicine.name} quantity`} hitSlop={8} onPress={onIncrease}>
-          <Text style={styles.stepperText}>+</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Increase ${medicine.name} quantity`}
+          accessibilityState={{ disabled: quantity >= medicine.maxQty }}
+          disabled={quantity >= medicine.maxQty}
+          hitSlop={8}
+          onPress={onIncrease}
+        >
+          <Text style={[styles.stepperText, quantity >= medicine.maxQty && styles.stepperTextDisabled]}>+</Text>
         </Pressable>
       </View>
       <Text style={styles.total}>{formatRupees(medicine.price * quantity)}</Text>
@@ -36,16 +43,17 @@ export function CartItemRow({ medicine, quantity, onIncrease, onDecrease }: Cart
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 15, padding: 11, marginBottom: 9, borderWidth: 1, borderColor: '#edf0ea' },
-  glyph: { width: 45, height: 45, borderRadius: 14, backgroundColor: '#edf5ee', justifyContent: 'center', alignItems: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 15, padding: 11, marginBottom: 9, borderWidth: 1, borderColor: colors.borderSubtle },
+  glyph: { width: 45, height: 45, borderRadius: 14, backgroundColor: colors.paleGreen, justifyContent: 'center', alignItems: 'center' },
   glyphText: { color: colors.green, fontSize: 17, fontWeight: '800' },
   info: { flex: 1, marginLeft: 10 },
   nameAndBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { color: colors.ink, fontSize: 13, fontWeight: '700' },
-  rxBadge: { overflow: 'hidden', backgroundColor: '#fff0dc', color: '#8c5412', fontSize: 9, fontWeight: '800', paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5 },
+  rxBadge: { overflow: 'hidden', backgroundColor: colors.paleAmber, color: colors.amberText, fontSize: 9, fontWeight: '800', paddingHorizontal: 5, paddingVertical: 2, borderRadius: 5 },
   price: { color: colors.muted, fontSize: 10, marginTop: 4 },
-  stepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f2f5f0', borderRadius: 9, paddingHorizontal: 7, gap: 9, minHeight: 40 },
+  stepper: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.stepper, borderRadius: 9, paddingHorizontal: 7, gap: 9, minHeight: 40 },
   stepperText: { color: colors.green, fontSize: 18, fontWeight: '600', padding: 2 },
+  stepperTextDisabled: { color: colors.muted },
   quantity: { color: colors.ink, fontSize: 12, fontWeight: '700' },
   total: { color: colors.ink, fontSize: 12, fontWeight: '800', minWidth: 43, textAlign: 'right', marginLeft: 5 },
 });
