@@ -22,6 +22,16 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 
 See [NOTES.md](NOTES.md) for assumptions and trade-offs. Run `npm test -- --runInBand`, `npx tsc --noEmit`, and `npx eslint .` to verify.
 
+## Installable Android APK
+
+For installs shared outside development (for example through Google Drive), build and share the arm64 release APK, not the debug APK:
+
+```sh
+npm run android:release
+```
+
+Upload `android/app/build/outputs/apk/release/app-release.apk`. The release build embeds the JavaScript bundle and does not require Metro. This APK targets arm64 Android devices and is signed with the project's debug key for sideload testing only; configure a private release keystore before publishing through Google Play.
+
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
