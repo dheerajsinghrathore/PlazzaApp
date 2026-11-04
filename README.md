@@ -1,5 +1,27 @@
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
+## Plazza take-home
+
+- Android API 36 with first-launch foreground location and notification requests, permission status banner, blocked-permission Settings flow, and coordinates when location is granted.
+- Local search across the medicine name and salt fields, plus the 14 item catalog in `src/features/catalog/data/catalog.json`.
+- Five persisted recent searches; cart quantities respect each medicine's `maxQty`; prescription medicines show an `Rx` badge.
+- Delivery is ₹40 when item total is below ₹499 and free at ₹499 or above. `FLAT50` needs ₹300; `SAVE10` gives 10% up to ₹100; `FREEDEL` waives delivery; `FIRST100` needs ₹200 and can be used once, recorded on Place Order.
+- The cart, active coupon, one-time coupon usage and recent search list use a versioned AsyncStorage document. Invalid cart changes remove a no longer eligible coupon and show an Android toast.
+
+## Source layout
+
+- `src/app`: app providers, startup hydration, and bottom tab navigation.
+- `src/features/home`: home/search screen and medicine/permission UI components.
+- `src/features/cart`: cart screen/components, cart state, and coupon/bill domain rules.
+- `src/features/catalog`: catalog data and local search domain functions.
+- `src/features/search`: recent-search Redux state.
+- `src/features/permissions`: permission requests and lifecycle state.
+- `src/store`: Redux store setup and AsyncStorage persistence.
+- `src/theme`: shared colors and formatting helpers.
+- Root `App.tsx` and native/build configuration stay in place for React Native CLI.
+
+See [NOTES.md](NOTES.md) for assumptions and trade-offs. Run `npm test -- --runInBand`, `npx tsc --noEmit`, and `npx eslint .` to verify.
+
 # Getting Started
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
