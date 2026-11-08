@@ -18,15 +18,22 @@ export type AppPermissionStatuses = {
   notifications: AppPermissionStatus;
 };
 
-const locationPermissions: Permission[] = Platform.OS === 'ios'
-  ? [PERMISSIONS.IOS.LOCATION_WHEN_IN_USE]
-  : Platform.OS === 'android'
-    ? [PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION, PERMISSIONS.ANDROID.ACCESS_COARSE_LOCATION]
+const locationPermissions: Permission[] =
+  Platform.OS === 'ios'
+    ? [PERMISSIONS.IOS.LOCATION_WHEN_IN_USE]
+    : Platform.OS === 'android'
+    ? [
+        PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+        PERMISSIONS.ANDROID.ACCESS_COARSE_LOCATION,
+      ]
     : [];
 
 export async function checkAppPermissions(): Promise<AppPermissionStatuses> {
   if (locationPermissions.length === 0) {
-    return { location: RESULTS.UNAVAILABLE, notifications: RESULTS.UNAVAILABLE };
+    return {
+      location: RESULTS.UNAVAILABLE,
+      notifications: RESULTS.UNAVAILABLE,
+    };
   }
 
   const [location, notificationResponse] = await Promise.all([
@@ -45,7 +52,10 @@ export async function checkAppPermissions(): Promise<AppPermissionStatuses> {
 
 export async function requestAppPermissions(): Promise<AppPermissionStatuses> {
   if (locationPermissions.length === 0) {
-    return { location: RESULTS.UNAVAILABLE, notifications: RESULTS.UNAVAILABLE };
+    return {
+      location: RESULTS.UNAVAILABLE,
+      notifications: RESULTS.UNAVAILABLE,
+    };
   }
 
   let location: PermissionStatus;
@@ -55,12 +65,16 @@ export async function requestAppPermissions(): Promise<AppPermissionStatuses> {
     location = locationValues.includes(RESULTS.GRANTED)
       ? RESULTS.GRANTED
       : locationValues.includes(RESULTS.BLOCKED)
-        ? RESULTS.BLOCKED
-        : locationValues[0] ?? RESULTS.UNAVAILABLE;
+      ? RESULTS.BLOCKED
+      : locationValues[0] ?? RESULTS.UNAVAILABLE;
   } else {
     location = await request(locationPermissions[0]);
   }
-  const notificationResponse = await requestNotifications(['alert', 'badge', 'sound']);
+  const notificationResponse = await requestNotifications([
+    'alert',
+    'badge',
+    'sound',
+  ]);
 
   return { location, notifications: notificationResponse.status };
 }

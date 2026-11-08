@@ -30,7 +30,9 @@ export const couponRules = {
 } as const;
 
 export type CouponCode = keyof typeof couponRules;
-export type CouponValidation = { valid: true } | { valid: false; reason: string };
+export type CouponValidation =
+  | { valid: true }
+  | { valid: false; reason: string };
 
 export function validateCoupon(
   code: string,
@@ -38,20 +40,31 @@ export function validateCoupon(
   usedCoupons: readonly CouponCode[] = [],
 ): CouponValidation {
   const normalized = code.trim().toUpperCase();
-  if (!Object.prototype.hasOwnProperty.call(couponRules, normalized)) return { valid: false, reason: 'That coupon code is not recognized.' };
+  if (!Object.prototype.hasOwnProperty.call(couponRules, normalized))
+    return { valid: false, reason: 'That coupon code is not recognized.' };
   const couponCode = normalized as CouponCode;
   const rule = couponRules[couponCode];
-  if (subtotal <= 0) return { valid: false, reason: 'Add an item before applying a coupon.' };
+  if (subtotal <= 0)
+    return { valid: false, reason: 'Add an item before applying a coupon.' };
   if (subtotal < rule.minimumSubtotal) {
-    return { valid: false, reason: `${couponCode} needs an item total of ₹${rule.minimumSubtotal}.` };
+    return {
+      valid: false,
+      reason: `${couponCode} needs an item total of ₹${rule.minimumSubtotal}.`,
+    };
   }
   if (rule.oneTime && usedCoupons.includes(couponCode)) {
-    return { valid: false, reason: `${couponCode} has already been used on this account.` };
+    return {
+      valid: false,
+      reason: `${couponCode} has already been used on this account.`,
+    };
   }
   return { valid: true };
 }
 
-export function couponDiscount(code: CouponCode | null, subtotal: number): number {
+export function couponDiscount(
+  code: CouponCode | null,
+  subtotal: number,
+): number {
   if (!code) return 0;
   const rule = couponRules[code];
   return Math.min(subtotal, rule.discount(subtotal));

@@ -19,9 +19,14 @@ describe('empty cart screen', () => {
     });
 
     if (!renderer) throw new Error('Cart screen did not render.');
-    const text = renderer.root.findAllByType(Text).map(node => node.props.children).join(' ');
+    const text = renderer.root
+      .findAllByType(Text)
+      .map(node => node.props.children)
+      .join(' ');
     expect(text).toContain('Browse the Home tab to find medicines.');
     expect(text).not.toContain('Bill breakdown');
-    expect(renderer.root.findAllByProps({ accessibilityLabel: 'Coupon code' })).toHaveLength(0);
+    expect(
+      renderer.root.findAllByProps({ accessibilityLabel: 'Coupon code' }),
+    ).toHaveLength(0);
   });
 });

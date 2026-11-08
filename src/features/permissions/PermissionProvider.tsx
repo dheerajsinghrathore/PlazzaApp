@@ -1,5 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { AppState, Linking, Platform } from 'react-native';
 import Geolocation from '@react-native-community/geolocation';
 import Geocoder from 'react-native-geocoder-reborn';
@@ -29,10 +37,15 @@ type PermissionContextValue = {
 
 const PermissionContext = createContext<PermissionContextValue | null>(null);
 
-function isBlockedRecord(value: unknown): value is { location: boolean; notifications: boolean } {
+function isBlockedRecord(
+  value: unknown,
+): value is { location: boolean; notifications: boolean } {
   if (typeof value !== 'object' || value === null) return false;
   const statuses = value as { location?: unknown; notifications?: unknown };
-  return typeof statuses.location === 'boolean' && typeof statuses.notifications === 'boolean';
+  return (
+    typeof statuses.location === 'boolean' &&
+    typeof statuses.notifications === 'boolean'
+  );
 }
 
 function mergeBlockedStatuses(
@@ -40,12 +53,16 @@ function mergeBlockedStatuses(
   previouslyBlocked: AppPermissionStatuses,
 ): AppPermissionStatuses {
   return {
-    location: current.location === RESULTS.DENIED && previouslyBlocked.location === RESULTS.BLOCKED
-      ? RESULTS.BLOCKED
-      : current.location,
-    notifications: current.notifications === RESULTS.DENIED && previouslyBlocked.notifications === RESULTS.BLOCKED
-      ? RESULTS.BLOCKED
-      : current.notifications,
+    location:
+      current.location === RESULTS.DENIED &&
+      previouslyBlocked.location === RESULTS.BLOCKED
+        ? RESULTS.BLOCKED
+        : current.location,
+    notifications:
+      current.notifications === RESULTS.DENIED &&
+      previouslyBlocked.notifications === RESULTS.BLOCKED
+        ? RESULTS.BLOCKED
+        : current.notifications,
   };
 }
 
@@ -56,17 +73,23 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
   });
   const [requesting, setRequesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState<{ city: string | null; district: string | null } | null>(null);
+  const [locationName, setLocationName] = useState<{
+    city: string | null;
+    district: string | null;
+  } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
   const mounted = useRef(true);
   const operationInProgress = useRef(false);
 
   const saveStatuses = useCallback(async (next: AppPermissionStatuses) => {
-    await AsyncStorage.setItem(BLOCKED_KEY, JSON.stringify({
-      location: next.location === RESULTS.BLOCKED,
-      notifications: next.notifications === RESULTS.BLOCKED,
-    })).catch(() => undefined);
+    await AsyncStorage.setItem(
+      BLOCKED_KEY,
+      JSON.stringify({
+        location: next.location === RESULTS.BLOCKED,
+        notifications: next.notifications === RESULTS.BLOCKED,
+      }),
+    ).catch(() => undefined);
     if (mounted.current) setStatuses(next);
   }, []);
 
@@ -84,28 +107,38 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
         Geocoder.geocodePosition({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
-        }).then(results => {
-          if (!mounted.current) return;
-          const result = results[0];
-          const city = result?.locality ?? result?.subLocality ?? null;
-          const district = result?.subAdminArea ?? null;
-          if (!city && !district) {
-            setAddressError('Could not determine your city and district. Please try again.');
-            return;
-          }
-          setLocationName({ city, district });
-        }).catch(geocoderError => {
-          if (mounted.current) {
-            setAddressError(geocoderError instanceof Error ? geocoderError.message : String(geocoderError));
-          }
-        });
+        })
+          .then(results => {
+            if (!mounted.current) return;
+            const result = results[0];
+            const city = result?.locality ?? result?.subLocality ?? null;
+            const district = result?.subAdminArea ?? null;
+            if (!city && !district) {
+              setAddressError(
+                'Could not determine your city and district. Please try again.',
+              );
+              return;
+            }
+            setLocationName({ city, district });
+          })
+          .catch(geocoderError => {
+            if (mounted.current) {
+              setAddressError(
+                geocoderError instanceof Error
+                  ? geocoderError.message
+                  : String(geocoderError),
+              );
+            }
+          });
       },
       positionError => {
         if (mounted.current) {
           setLocationName(null);
-          setLocationError(positionError.code === 2
-            ? 'Device location is turned off or unavailable.'
-            : positionError.message);
+          setLocationError(
+            positionError.code === 2
+              ? 'Device location is turned off or unavailable.'
+              : positionError.message,
+          );
         }
       },
       { enableHighAccuracy: false, timeout: 12000, maximumAge: 60000 },
@@ -151,7 +184,11 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
       await AsyncStorage.setItem(REQUESTED_KEY, 'true').catch(() => undefined);
     } catch (requestError) {
       if (mounted.current) {
-        setError(requestError instanceof Error ? requestError.message : String(requestError));
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : String(requestError),
+        );
       }
     } finally {
       operationInProgress.current = false;
@@ -165,7 +202,11 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
       await openSettings('application');
     } catch (settingsError) {
       if (mounted.current) {
-        setError(settingsError instanceof Error ? settingsError.message : String(settingsError));
+        setError(
+          settingsError instanceof Error
+            ? settingsError.message
+            : String(settingsError),
+        );
       }
     }
   }, []);
@@ -179,7 +220,11 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
       }
     } catch (settingsError) {
       if (mounted.current) {
-        setLocationError(settingsError instanceof Error ? settingsError.message : String(settingsError));
+        setLocationError(
+          settingsError instanceof Error
+            ? settingsError.message
+            : String(settingsError),
+        );
       }
     }
   }, []);
@@ -189,11 +234,17 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
     const initialize = async () => {
       try {
         await refreshStatuses();
-        const alreadyRequested = await AsyncStorage.getItem(REQUESTED_KEY).catch(() => null);
+        const alreadyRequested = await AsyncStorage.getItem(
+          REQUESTED_KEY,
+        ).catch(() => null);
         if (alreadyRequested !== 'true') await requestPermissions();
       } catch (initializationError) {
         if (mounted.current) {
-          setError(initializationError instanceof Error ? initializationError.message : String(initializationError));
+          setError(
+            initializationError instanceof Error
+              ? initializationError.message
+              : String(initializationError),
+          );
         }
       }
     };
@@ -203,7 +254,11 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
       if (state === 'active' && !operationInProgress.current) {
         refreshStatuses().catch(refreshError => {
           if (mounted.current) {
-            setError(refreshError instanceof Error ? refreshError.message : String(refreshError));
+            setError(
+              refreshError instanceof Error
+                ? refreshError.message
+                : String(refreshError),
+            );
           }
         });
       }
@@ -214,28 +269,44 @@ export function PermissionProvider({ children }: React.PropsWithChildren) {
     };
   }, [refreshStatuses, requestPermissions]);
 
-  const value = useMemo(() => ({
-    statuses,
-    locationName,
-    locationError,
-    addressError,
-    requesting,
-    error,
-    requestPermissions,
-    openAppSettings,
-    openDeviceLocationSettings,
-    retryLocation,
-  }), [
-    statuses, locationName, locationError, addressError, requesting, error,
-    requestPermissions, openAppSettings, openDeviceLocationSettings, retryLocation,
-  ]);
+  const value = useMemo(
+    () => ({
+      statuses,
+      locationName,
+      locationError,
+      addressError,
+      requesting,
+      error,
+      requestPermissions,
+      openAppSettings,
+      openDeviceLocationSettings,
+      retryLocation,
+    }),
+    [
+      statuses,
+      locationName,
+      locationError,
+      addressError,
+      requesting,
+      error,
+      requestPermissions,
+      openAppSettings,
+      openDeviceLocationSettings,
+      retryLocation,
+    ],
+  );
 
-  return <PermissionContext.Provider value={value}>{children}</PermissionContext.Provider>;
+  return (
+    <PermissionContext.Provider value={value}>
+      {children}
+    </PermissionContext.Provider>
+  );
 }
 
 export function useAppPermissions(): PermissionContextValue {
   const context = useContext(PermissionContext);
-  if (!context) throw new Error('useAppPermissions must be used within PermissionProvider');
+  if (!context)
+    throw new Error('useAppPermissions must be used within PermissionProvider');
   return context;
 }
 

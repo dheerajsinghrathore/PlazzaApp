@@ -14,7 +14,12 @@ type TabIconProps = { color: string };
 const Tabs = createBottomTabNavigator<MainTabs>();
 
 function HomeTabIcon({ color }: TabIconProps) {
-  return <Image source={require('../../../assets/icons/home.png')} style={[styles.icon, { tintColor: color }]} />;
+  return (
+    <Image
+      source={require('../../../assets/icons/home.png')}
+      style={[styles.icon, { tintColor: color }]}
+    />
+  );
 }
 
 function CartTabIcon({ color }: TabIconProps) {
@@ -64,8 +69,13 @@ function CartTabIcon({ color }: TabIconProps) {
   }, [count, scale, translateY]);
 
   return (
-    <Animated.View style={[styles.cartIcon, { transform: [{ translateY }, { scale }] }]}>
-      <Image source={require('../../../assets/icons/cart.png')} style={[styles.icon, { tintColor: color }]} />
+    <Animated.View
+      style={[styles.cartIcon, { transform: [{ translateY }, { scale }] }]}
+    >
+      <Image
+        source={require('../../../assets/icons/cart.png')}
+        style={[styles.icon, { tintColor: color }]}
+      />
       {count > 0 && (
         <View style={styles.tabBadge}>
           <Text style={styles.tabBadgeText}>{count}</Text>
@@ -115,7 +125,12 @@ export function BottomTabs() {
 
 const styles = StyleSheet.create({
   icon: { width: 24, height: 24, resizeMode: 'contain' },
-  cartIcon: { width: 26, height: 24, alignItems: 'center', justifyContent: 'center' },
+  cartIcon: {
+    width: 26,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabBadge: {
     position: 'absolute',
     right: -8,

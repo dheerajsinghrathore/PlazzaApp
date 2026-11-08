@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PersistedCartState, restoreCart } from '../features/cart/state/cartSlice';
+import {
+  PersistedCartState,
+  restoreCart,
+} from '../features/cart/state/cartSlice';
 import { couponRules, CouponCode } from '../features/cart/domain/couponRules';
 import { medicines } from '../features/catalog/domain/medicines';
 import { restoreRecentSearches } from '../features/search/state/searchSlice';
@@ -37,7 +40,11 @@ export async function loadPersistedState(dispatch: AppDispatch): Promise<void> {
 export async function persistState(state: RootState): Promise<void> {
   const persisted: PersistedState = {
     version: CURRENT_VERSION,
-    cart: { lines: state.cart.lines, coupon: state.cart.coupon, usedCoupons: state.cart.usedCoupons },
+    cart: {
+      lines: state.cart.lines,
+      coupon: state.cart.coupon,
+      usedCoupons: state.cart.usedCoupons,
+    },
     recentSearches: state.search.recent.slice(0, 5),
   };
   try {
@@ -68,23 +75,51 @@ function isPersistedState(value: unknown): value is PersistedState {
 }
 
 function isPersistedCart(value: unknown): value is PersistedCartState {
-  if (!isRecord(value) || !Array.isArray(value.lines) || !Array.isArray(value.usedCoupons)) return false;
+  if (
+    !isRecord(value) ||
+    !Array.isArray(value.lines) ||
+    !Array.isArray(value.usedCoupons)
+  )
+    return false;
   const linesValid = value.lines.every((line: unknown) => {
-    if (!isRecord(line) || typeof line.medicineId !== 'string' || typeof line.quantity !== 'number') return false;
+    if (
+      !isRecord(line) ||
+      typeof line.medicineId !== 'string' ||
+      typeof line.quantity !== 'number'
+    )
+      return false;
     const medicine = medicines.find(item => item.id === line.medicineId);
-    return Boolean(medicine && Number.isInteger(line.quantity) && line.quantity > 0 && line.quantity <= medicine.maxQty);
+    return Boolean(
+      medicine &&
+        Number.isInteger(line.quantity) &&
+        line.quantity > 0 &&
+        line.quantity <= medicine.maxQty,
+    );
   });
   const couponValid = value.coupon === null || isCouponCode(value.coupon);
   return linesValid && couponValid && value.usedCoupons.every(isCouponCode);
 }
 
 function migrateLegacyCart(value: unknown): PersistedCartState {
-  if (!isRecord(value) || !Array.isArray(value.lines)) return { lines: [], coupon: null, usedCoupons: [] };
-  const lines = value.lines.filter((line: unknown): line is { medicineId: string; quantity: number } => {
-    if (!isRecord(line) || typeof line.medicineId !== 'string' || typeof line.quantity !== 'number') return false;
-    const medicine = medicines.find(item => item.id === line.medicineId);
-    return Boolean(medicine && Number.isInteger(line.quantity) && line.quantity > 0 && line.quantity <= medicine.maxQty);
-  });
+  if (!isRecord(value) || !Array.isArray(value.lines))
+    return { lines: [], coupon: null, usedCoupons: [] };
+  const lines = value.lines.filter(
+    (line: unknown): line is { medicineId: string; quantity: number } => {
+      if (
+        !isRecord(line) ||
+        typeof line.medicineId !== 'string' ||
+        typeof line.quantity !== 'number'
+      )
+        return false;
+      const medicine = medicines.find(item => item.id === line.medicineId);
+      return Boolean(
+        medicine &&
+          Number.isInteger(line.quantity) &&
+          line.quantity > 0 &&
+          line.quantity <= medicine.maxQty,
+      );
+    },
+  );
   const coupon = isCouponCode(value.coupon) ? value.coupon : null;
   return { lines, coupon, usedCoupons: [] };
 }
@@ -98,7 +133,10 @@ function isSearchList(value: unknown): value is string[] {
 }
 
 function isCouponCode(value: unknown): value is CouponCode {
-  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(couponRules, value);
+  return (
+    typeof value === 'string' &&
+    Object.prototype.hasOwnProperty.call(couponRules, value)
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Provider } from 'react-redux';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+
 import { PermissionProvider } from '../features/permissions/PermissionProvider';
 import { colors } from '../theme/colors';
 import { loadPersistedState, persistState } from '../store/persistence';
@@ -14,13 +21,24 @@ export default function App() {
   useEffect(() => {
     let active = true;
     let unsubscribe: (() => void) | undefined;
-    loadPersistedState(store.dispatch).finally(() => {
-      if (!active) return;
-      setReady(true);
-      unsubscribe = store.subscribe(() => {
-        persistState(store.getState()).catch(() => undefined);
-      });
-    });
+
+    const initialize = async () => {
+      try {
+        await loadPersistedState(store.dispatch);
+      } finally {
+        if (!active) {
+          return;
+        }
+
+        setReady(true);
+        unsubscribe = store.subscribe(() => {
+          persistState(store.getState()).catch(() => undefined);
+        });
+      }
+    };
+
+    initialize();
+
     return () => {
       active = false;
       unsubscribe?.();
@@ -28,24 +46,39 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <PermissionProvider>
-        <StatusBar barStyle="dark-content" />
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
-          <Provider store={store}>
-            {ready ? <BottomTabs /> : <View style={styles.loading}>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={styles.loadingText}>Getting your shop ready…</Text>
-            </View>}
-          </Provider>
-        </SafeAreaView>
-      </PermissionProvider>
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <SafeAreaProvider>
+        <PermissionProvider>
+          <StatusBar barStyle="dark-content" />
+          <SafeAreaView edges={['top']} style={styles.safeArea}>
+            {ready ? (
+              <BottomTabs />
+            ) : (
+              <View style={styles.loading}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={styles.loadingText}>Getting your shop ready…</Text>
+              </View>
+            )}
+          </SafeAreaView>
+        </PermissionProvider>
+      </SafeAreaProvider>
+    </Provider>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-  loadingText: { color: colors.muted, fontSize: 13 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    color: colors.muted,
+    fontSize: 13,
+  },
 });

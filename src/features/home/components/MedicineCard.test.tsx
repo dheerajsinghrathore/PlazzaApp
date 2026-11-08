@@ -8,7 +8,11 @@ describe('medicine card quantity limit', () => {
     let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
     ReactTestRenderer.act(() => {
       renderer = ReactTestRenderer.create(
-        <MedicineCard medicine={medicines[2]} quantity={medicines[2].maxQty} onAdd={jest.fn()} />,
+        <MedicineCard
+          medicine={medicines[2]}
+          quantity={medicines[2].maxQty}
+          onAdd={jest.fn()}
+        />,
       );
     });
 

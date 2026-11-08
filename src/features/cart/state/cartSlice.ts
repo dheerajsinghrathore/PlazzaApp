@@ -9,16 +9,34 @@ export type CartState = {
   usedCoupons: CouponCode[];
   notice: string | null;
 };
-export type PersistedCartState = Pick<CartState, 'lines' | 'coupon' | 'usedCoupons'>;
-const initialState: CartState = { lines: [], coupon: null, usedCoupons: [], notice: null };
+export type PersistedCartState = Pick<
+  CartState,
+  'lines' | 'coupon' | 'usedCoupons'
+>;
+const initialState: CartState = {
+  lines: [],
+  coupon: null,
+  usedCoupons: [],
+  notice: null,
+};
 
 function subtotalOf(lines: CartLine[]): number {
-  return lines.reduce((sum, line) => sum + (medicines.find(item => item.id === line.medicineId)?.price ?? 0) * line.quantity, 0);
+  return lines.reduce(
+    (sum, line) =>
+      sum +
+      (medicines.find(item => item.id === line.medicineId)?.price ?? 0) *
+        line.quantity,
+    0,
+  );
 }
 
 function validateActiveCoupon(state: CartState): void {
   if (!state.coupon) return;
-  const result = validateCoupon(state.coupon, subtotalOf(state.lines), state.usedCoupons);
+  const result = validateCoupon(
+    state.coupon,
+    subtotalOf(state.lines),
+    state.usedCoupons,
+  );
   if (!result.valid) {
     state.coupon = null;
     state.notice = `${result.reason} The coupon was removed.`;
@@ -26,7 +44,8 @@ function validateActiveCoupon(state: CartState): void {
 }
 
 const cartSlice = createSlice({
-  name: 'cart', initialState,
+  name: 'cart',
+  initialState,
   reducers: {
     addToCart(state, action: PayloadAction<string>) {
       const medicine = medicines.find(item => item.id === action.payload);
@@ -39,12 +58,19 @@ const cartSlice = createSlice({
     decreaseQuantity(state, action: PayloadAction<string>) {
       const line = state.lines.find(item => item.medicineId === action.payload);
       if (!line) return;
-      if (line.quantity <= 1) state.lines = state.lines.filter(item => item.medicineId !== action.payload);
+      if (line.quantity <= 1)
+        state.lines = state.lines.filter(
+          item => item.medicineId !== action.payload,
+        );
       else line.quantity -= 1;
       validateActiveCoupon(state);
     },
     applyCoupon(state, action: PayloadAction<string>) {
-      const result = validateCoupon(action.payload, subtotalOf(state.lines), state.usedCoupons);
+      const result = validateCoupon(
+        action.payload,
+        subtotalOf(state.lines),
+        state.usedCoupons,
+      );
       if (!result.valid) {
         state.notice = result.reason;
         return;
@@ -61,19 +87,38 @@ const cartSlice = createSlice({
       validateActiveCoupon(restored);
       return restored;
     },
-    consumeNotice(state) { state.notice = null; },
+    consumeNotice(state) {
+      state.notice = null;
+    },
     placeOrder(state) {
       if (state.lines.length === 0) return;
-      if (state.coupon && couponRules[state.coupon].oneTime && !state.usedCoupons.includes(state.coupon)) {
+      if (
+        state.coupon &&
+        couponRules[state.coupon].oneTime &&
+        !state.usedCoupons.includes(state.coupon)
+      ) {
         state.usedCoupons.push(state.coupon);
       }
       state.lines = [];
       state.coupon = null;
       state.notice = 'Order placed. Your cart is clear.';
     },
-    clearCart(state) { state.lines = []; state.coupon = null; state.notice = null; },
+    clearCart(state) {
+      state.lines = [];
+      state.coupon = null;
+      state.notice = null;
+    },
   },
 });
 
-export const { addToCart, decreaseQuantity, applyCoupon, setCoupon, restoreCart, consumeNotice, placeOrder, clearCart } = cartSlice.actions;
+export const {
+  addToCart,
+  decreaseQuantity,
+  applyCoupon,
+  setCoupon,
+  restoreCart,
+  consumeNotice,
+  placeOrder,
+  clearCart,
+} = cartSlice.actions;
 export default cartSlice.reducer;

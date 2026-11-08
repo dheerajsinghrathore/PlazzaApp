@@ -15,6 +15,8 @@ export const searchMedicines = (query: string): Medicine[] => {
   const normalized = query.trim().toLocaleLowerCase();
   if (!normalized) return [];
   return medicines.filter(medicine =>
-    `${medicine.name} ${medicine.salt}`.toLocaleLowerCase().includes(normalized),
+    `${medicine.name} ${medicine.salt}`
+      .toLocaleLowerCase()
+      .includes(normalized),
   );
 };

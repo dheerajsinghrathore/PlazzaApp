@@ -1,4 +1,9 @@
-import reducer, { addToCart, applyCoupon, decreaseQuantity, placeOrder } from './cartSlice';
+import reducer, {
+  addToCart,
+  applyCoupon,
+  decreaseQuantity,
+  placeOrder,
+} from './cartSlice';
 
 describe('cart mechanics', () => {
   it('caps each line at its catalog maxQty', () => {

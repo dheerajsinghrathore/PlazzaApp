@@ -25,25 +25,28 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('../../permissions/PermissionProvider', () => ({
   permissionStatusLabel: (status: string) => status,
   useAppPermissions: () => ({
-      statuses: { location: 'unknown', notifications: 'unknown' },
-      locationName: null,
-      locationError: null,
-      addressError: null,
-      requesting: false,
-      error: null,
-      requestPermissions: jest.fn(),
-      openAppSettings: jest.fn(),
-      openDeviceLocationSettings: jest.fn(),
-      retryLocation: jest.fn(),
-    }),
+    statuses: { location: 'unknown', notifications: 'unknown' },
+    locationName: null,
+    locationError: null,
+    addressError: null,
+    requesting: false,
+    error: null,
+    requestPermissions: jest.fn(),
+    openAppSettings: jest.fn(),
+    openDeviceLocationSettings: jest.fn(),
+    retryLocation: jest.fn(),
+  }),
 }));
 
 function createTestStore() {
-  return configureStore({ reducer: { cart: cartReducer, search: searchReducer } });
+  return configureStore({
+    reducer: { cart: cartReducer, search: searchReducer },
+  });
 }
 
 function visibleText(renderer: ReactTestRenderer.ReactTestRenderer): string {
-  return renderer.root.findAllByType(Text)
+  return renderer.root
+    .findAllByType(Text)
     .map(node => node.props.children)
     .filter((child): child is string => typeof child === 'string')
     .join(' ');
@@ -72,13 +75,17 @@ describe('Home medicine search workflow', () => {
     });
     if (!renderer) throw new Error('Home screen did not render.');
 
-    expect(visibleText(renderer)).toContain('Search by medicine name or salt to find a match.');
+    expect(visibleText(renderer)).toContain(
+      'Search by medicine name or salt to find a match.',
+    );
 
     const input = renderer.root.findByType(TextInput);
     ReactTestRenderer.act(() => input.props.onChangeText('not-a-medicine'));
     expect(visibleText(renderer)).toContain('Searching medicines…');
     ReactTestRenderer.act(() => jest.advanceTimersByTime(120));
-    expect(visibleText(renderer)).toContain('No matches yet. Try another medicine or salt.');
+    expect(visibleText(renderer)).toContain(
+      'No matches yet. Try another medicine or salt.',
+    );
     expect(store.getState().search.recent).toEqual([]);
 
     ReactTestRenderer.act(() => input.props.onChangeText('azithromycin'));
@@ -91,9 +98,13 @@ describe('Home medicine search workflow', () => {
     ReactTestRenderer.act(() => jest.advanceTimersByTime(120));
     expect(store.getState().search.recent).toEqual(['Azithral 500']);
 
-    const addButton = renderer.root.findByProps({ accessibilityLabel: 'Add Azithral 500 to cart' });
+    const addButton = renderer.root.findByProps({
+      accessibilityLabel: 'Add Azithral 500 to cart',
+    });
     ReactTestRenderer.act(() => addButton.props.onPress());
-    expect(store.getState().cart.lines).toEqual([{ medicineId: 'm3', quantity: 1 }]);
+    expect(store.getState().cart.lines).toEqual([
+      { medicineId: 'm3', quantity: 1 },
+    ]);
 
     ReactTestRenderer.act(() => mockFocusBlur?.());
     expect(renderer.root.findByType(TextInput).props.value).toBe('');
